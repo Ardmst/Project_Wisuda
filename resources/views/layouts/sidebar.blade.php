@@ -69,7 +69,7 @@
                 <span class="ml-3 font-medium">Daftar Wisuda</span>
             </a>
             
-            {{-- Dropdown Cetak (Pakai x-data sendiri) --}}
+            {{-- Dropdown Cetak (INI YANG SAYA PERBAIKI LINKNYA) --}}
             <div x-data="{ openCetak: false }">
                 <button @click="openCetak = !openCetak" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition duration-200 hover:bg-slate-700 hover:text-white text-slate-300">
                     <span class="flex items-center">
@@ -79,12 +79,21 @@
                     <i class="fas text-xs transition-transform duration-200" :class="openCetak ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="openCetak" x-transition class="mt-1 ml-3 border-l-2 border-slate-600 pl-2 space-y-1">
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Biodata</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Draft Ijazah</a>
+                    
+                    {{-- Link Biodata (Sudah diperbaiki) --}}
+                    <a href="{{ route('graduation.print.biodata') }}" target="_blank" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">
+                        Biodata
+                    </a>
+                    
+                    {{-- Link Draft Ijazah (Sudah diperbaiki) --}}
+                    <a href="{{ route('graduation.print.draft') }}" target="_blank" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">
+                        Draft Ijazah
+                    </a>
+
                 </div>
             </div>
 
-            {{-- Dropdown Pantau (Pakai x-data sendiri) --}}
+            {{-- Dropdown Pantau --}}
             <div x-data="{ openPantau: false }">
                 <button @click="openPantau = !openPantau" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition duration-200 hover:bg-slate-700 hover:text-white text-slate-300">
                     <span class="flex items-center">
@@ -94,16 +103,17 @@
                     <i class="fas text-xs transition-transform duration-200" :class="openPantau ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="openPantau" x-transition class="mt-1 ml-3 border-l-2 border-slate-600 pl-2 space-y-1">
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Daftar Peserta</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Buku Kenangan</a>
+                    <a href="{{ route('graduation.list') }}" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Daftar Peserta</a>
+                    <a href="{{ route('graduation.yearbook') }}" class="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700 rounded-r">Buku Kenangan</a>
                 </div>
             </div>
             
             <a href="{{ route('manual.book') }}" 
-               class="flex items-center px-3 py-2.5 rounded-lg transition duration-200 hover:bg-slate-700 hover:text-white {{ request()->routeIs('manual.book') ? 'bg-blue-600 text-white shadow-md' : '' }}">
-                <i class="fas fa-book-open w-5 text-center"></i>
-                <span class="ml-3 font-medium">Buku Panduan</span>
-            </a>
+   class="flex items-center px-3 py-2.5 rounded-lg transition-colors duration-200 
+   {{ request()->routeIs('manual.book') ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-700 hover:text-white' }}">
+    <i class="fas fa-book-open w-5 text-center"></i>
+    <span class="ml-3 font-medium">Buku Panduan</span>
+</a>
 
         @endif 
     </nav>

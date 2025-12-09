@@ -14,10 +14,12 @@ class GraduationRegistration extends Model
 
     /**
      * Kolom yang diizinkan untuk diisi secara massal (Mass Assignment).
-     * Semua kolom yang diisi di Controller harus ada di sini.
+     * PENTING: Jangan hapus 'nik', 'phone', 'address' karena Controller
+     * tetap mengirim data tersebut (meskipun isinya dummy/strip).
      */
     protected $fillable = [
-        'user_id', // <--- INI PERBAIKANNYA
+        'user_id',
+        'thesis_title',
         'parent_name',
         'toga_size',
         'ipk',

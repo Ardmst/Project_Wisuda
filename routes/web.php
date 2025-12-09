@@ -45,8 +45,35 @@ Route::middleware('auth')->group(function () {
         return view('manual-book');
     })->name('manual.book');
 
+   // ... di dalam middleware 'auth' ...
+
+// ... di dalam middleware 'auth' ...
+// ... rute cetak yang lain ...
+
+// ... rute pantau ...
+    Route::get('/graduation/list', [GraduationController::class, 'listPeserta'])->name('graduation.list');
+
+// --- TAMBAHKAN INI ---
+    Route::get('/graduation/yearbook', [GraduationController::class, 'yearbook'])->name('graduation.yearbook');
+// ---------------------
+
+    // Rute Pendaftaran (Sudah ada)
     Route::get('/graduation/register', [GraduationController::class, 'create'])->name('graduation.create');
     Route::post('/graduation/register', [GraduationController::class, 'store'])->name('graduation.store');
+
+    // --- TAMBAHKAN INI (JANGAN SAMPAI LEWAT) ---
+    Route::get('/graduation/print/biodata', [GraduationController::class, 'printBiodata'])->name('graduation.print.biodata');
+    Route::get('/graduation/print/draft', [GraduationController::class, 'printDraft'])->name('graduation.print.draft');
+
+    // Rute Buku Panduan
+    Route::get('/manual-book', function () {
+    return view('manual-book');
+})->name('manual.book');
+    // --------------------------------------------
+    // ... rute cetak yang tadi ...
+
+
+// ...
 });
 
 
@@ -87,6 +114,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::get('/print', 'print')->name('print'); // <-- TAMBAHAN BARU
     });
 
-});
+}); 
 
 require __DIR__.'/auth.php';
