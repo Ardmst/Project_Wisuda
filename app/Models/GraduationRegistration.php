@@ -9,16 +9,11 @@ class GraduationRegistration extends Model
 {
     use HasFactory;
 
-    // Nama tabel di database
     protected $table = 'graduation_registrations';
 
-    /**
-     * Kolom yang diizinkan untuk diisi secara massal (Mass Assignment).
-     * PENTING: Jangan hapus 'nik', 'phone', 'address' karena Controller
-     * tetap mengirim data tersebut (meskipun isinya dummy/strip).
-     */
     protected $fillable = [
         'user_id',
+        'graduation_period_id', // <--- Pastikan ini ada
         'thesis_title',
         'parent_name',
         'toga_size',
@@ -28,11 +23,20 @@ class GraduationRegistration extends Model
     ];
 
     /**
-     * Relasi ke Model User.
-     * Satu pendaftaran wisuda dimiliki oleh satu user.
+     * Relasi 1: Pendaftaran milik satu User (Mahasiswa)
+     * PENTING: Jangan dihapus, nanti Admin error pas buka daftar peserta.
      */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relasi 2: Pendaftaran masuk ke satu Periode Wisuda
+     * (Fitur Baru)
+     */
+    public function period()
+    {
+        return $this->belongsTo(GraduationPeriod::class, 'graduation_period_id');
     }
 }

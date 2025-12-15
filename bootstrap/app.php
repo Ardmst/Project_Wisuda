@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // 2. PENTING: Masukkan kode pendaftaran alias di sini
         $middleware->alias([
-            'admin' => Admin::class,
+            'admin' => \App\Http\Middleware\Admin::class,
         ]);
 
     })

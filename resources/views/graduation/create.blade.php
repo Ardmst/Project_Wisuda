@@ -1,118 +1,128 @@
 @extends('layouts.app')
 
-{{-- Set judul header --}}
-@section('header', 'Form Pendaftaran Wisuda')
+@section('header', 'Pendaftaran Wisuda')
 
 @section('content')
-<div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+<div class="max-w-4xl mx-auto">
     
-    <h3 class="text-2xl font-semibold text-gray-800 mb-2">Formulir Pendaftaran Wisuda</h3>
-    <p class="text-gray-600 mb-6">Pastikan semua data diisi dengan benar. Data yang sudah dikirim tidak dapat diubah.</p>
-
-    <form action="{{ route('graduation.store') }}" method="POST">
-        @csrf
-        
-        {{-- SECTION 1: DATA DIRI MAHASISWA (READONLY) --}}
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-            <h4 class="text-sm font-bold text-gray-500 uppercase mb-4 border-b pb-2">Data Mahasiswa</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama Mahasiswa</label>
-                    <input type="text" value="{{ Auth::user()->name }}" 
-                           class="mt-1 block w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-600 cursor-not-allowed" readonly>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">NIM</label>
-                    <input type="text" value="{{ Auth::user()->nim ?? '-' }}" 
-                           class="mt-1 block w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-600 cursor-not-allowed" readonly>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Fakultas</label>
-                    <input type="text" value="{{ Auth::user()->faculty ?? '-' }}" 
-                           class="mt-1 block w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-600 cursor-not-allowed" readonly>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Program Studi</label>
-                    <input type="text" value="{{ Auth::user()->major ?? '-' }}" 
-                           class="mt-1 block w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-md text-gray-600 cursor-not-allowed" readonly>
-                </div>
-            </div>
-        </div>
-
-        {{-- SECTION 2: FORMULIR ISIAN --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {{-- LOGIKA: JIKA SUDAH DAFTAR, TAMPILKAN STATUS --}}
+    @if($registration)
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center border-t-4 {{ $registration->status == 'verified' ? 'border-green-500' : ($registration->status == 'rejected' ? 'border-red-500' : 'border-yellow-500') }}">
             
-            {{-- 1. Nama Orang Tua --}}
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Orang Tua / Wali (Untuk Undangan)</label>
-                <input type="text" name="parent_name" value="{{ old('parent_name') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('parent_name') border-red-500 @enderror" 
-                       placeholder="Contoh: Bpk. John Doe & Ibu Jane Doe" required>
-                @error('parent_name')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
+            <div class="mb-4">
+                @if($registration->status == 'pending')
+                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-clock text-3xl text-yellow-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Pendaftaran Sedang Diverifikasi</h2>
+                    <p class="text-slate-600 mt-2">Data Anda sudah masuk ke sistem. Mohon tunggu admin melakukan verifikasi berkas.</p>
+                
+                @elseif($registration->status == 'verified')
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Selamat! Anda Terdaftar</h2>
+                    <p class="text-slate-600 mt-2">Anda resmi menjadi calon wisudawan {{ $registration->period->name }}.</p>
+                    <div class="mt-6">
+                         <a href="{{ route('graduation.print.biodata') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Cetak Biodata</a>
+                    </div>
+
+                @else
+                    <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-800">Pendaftaran Ditolak</h2>
+                    <p class="text-slate-600 mt-2">Mohon hubungi bagian akademik untuk informasi lebih lanjut.</p>
+                @endif
             </div>
 
-            {{-- 2. Ukuran Toga --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Ukuran Toga</label>
-                <select name="toga_size" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('toga_size') border-red-500 @enderror" required>
-                    <option value="" disabled selected>Pilih Ukuran</option>
-                    <option value="S" {{ old('toga_size') == 'S' ? 'selected' : '' }}>S</option>
-                    <option value="M" {{ old('toga_size') == 'M' ? 'selected' : '' }}>M</option>
-                    <option value="L" {{ old('toga_size') == 'L' ? 'selected' : '' }}>L</option>
-                    <option value="XL" {{ old('toga_size') == 'XL' ? 'selected' : '' }}>XL</option>
-                    <option value="XXL" {{ old('toga_size') == 'XXL' ? 'selected' : '' }}>XXL</option>
-                </select>
-                @error('toga_size')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
+            <div class="bg-slate-50 p-4 rounded-lg text-left mt-6 max-w-lg mx-auto">
+                <p class="text-sm text-slate-500">Judul Skripsi:</p>
+                <p class="font-medium text-slate-800 mb-2">{{ $registration->thesis_title }}</p>
+                <p class="text-sm text-slate-500">Tanggal Daftar:</p>
+                <p class="font-medium text-slate-800">{{ $registration->created_at->format('d F Y H:i') }} WIB</p>
             </div>
-
-            {{-- Spacer Kosong (Biar rapi) --}}
-            <div class="hidden md:block"></div>
-
-            {{-- 3. IPK --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">IPK (Indeks Prestasi Kumulatif)</label>
-                <input type="number" step="0.01" name="ipk" value="{{ old('ipk') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('ipk') border-red-500 @enderror" 
-                       placeholder="Contoh: 3.85" required>
-                @error('ipk')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- 4. IPS --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">IPS (Semester Terakhir)</label>
-                <input type="number" step="0.01" name="ips" value="{{ old('ips') }}"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('ips') border-red-500 @enderror" 
-                       placeholder="Contoh: 3.90" required>
-                @error('ips')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- 5. Judul Skripsi (Full Width) --}}
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Judul Skripsi / Tugas Akhir</label>
-                <textarea name="thesis_title" rows="3" 
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 @error('thesis_title') border-red-500 @enderror" 
-                          placeholder="Tuliskan judul lengkap sesuai pengesahan..." required>{{ old('thesis_title') }}</textarea>
-                @error('thesis_title')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
         </div>
 
-        {{-- Tombol Submit --}}
-        <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition transform hover:scale-105 flex items-center">
-                <i class="fas fa-paper-plane mr-2"></i> Kirim Pendaftaran
-            </button>
+    {{-- LOGIKA: JIKA BELUM DAFTAR, TAMPILKAN FORM --}}
+    @else
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-blue-600 p-6 text-white">
+                <h2 class="text-xl font-bold">Formulir Pendaftaran Wisuda</h2>
+                <p class="text-blue-100 text-sm mt-1">Isi data dengan teliti. Data akan dicetak di ijazah.</p>
+            </div>
+            
+            <form action="{{ route('graduation.store') }}" method="POST" class="p-6">
+                @csrf
+                <input type="hidden" name="graduation_period_id" value="{{ $period->id }}">
+
+                {{-- Alert Info Periode --}}
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                Anda mendaftar untuk: <span class="font-bold">{{ $period->name }}</span><br>
+                                Tanggal Pelaksanaan: {{ \Carbon\Carbon::parse($period->graduation_date)->translatedFormat('d F Y') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap (Sesuai Ijazah)</label>
+                        <input type="text" value="{{ Auth::user()->name }}" class="w-full bg-slate-100 border-slate-300 rounded-lg text-slate-500" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+                        <input type="text" value="{{ Auth::user()->nim }}" class="w-full bg-slate-100 border-slate-300 rounded-lg text-slate-500" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Program Studi</label>
+                        <input type="text" value="{{ Auth::user()->major }}" class="w-full bg-slate-100 border-slate-300 rounded-lg text-slate-500" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Orang Tua (Untuk Undangan)</label>
+                        <input type="text" name="parent_name" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required placeholder="Contoh: Bpk. Suparman">
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Judul Skripsi / Tugas Akhir</label>
+                    <textarea name="thesis_title" rows="2" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required placeholder="Judul lengkap sesuai revisi terakhir..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">IPK Terakhir</label>
+                        <input type="number" step="0.01" name="ipk" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required placeholder="3.xx">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nilai Skripsi (Angka)</label>
+                        <input type="number" step="0.01" name="ips" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required placeholder="4.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Ukuran Toga</label>
+                        <select name="toga_size" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="S">S</option>
+                            <option value="M" selected>M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="XXL">XXL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end border-t pt-6">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5">
+                        Kirim Pendaftaran
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    @endif
 </div>
 @endsection

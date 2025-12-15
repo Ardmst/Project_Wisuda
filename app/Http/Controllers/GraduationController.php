@@ -2,162 +2,172 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreGraduationRequest; 
-use App\Models\GraduationRegistration; 
-use App\Models\User; // Tambahkan ini untuk filter Prodi
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\Auth;
+use App\Models\GraduationRegistration;
+use App\Models\GraduationPeriod;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf; // Library untuk generate PDF
 
 class GraduationController extends Controller
 {
-    /**
-     * Tampilkan Form Pendaftaran
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | 1. PENDAFTARAN WISUDA
+    |--------------------------------------------------------------------------
+    */
+    
     public function create()
     {
         $user = Auth::user();
 
-        // Cek apakah user sudah mendaftar
-        $existingRegistration = GraduationRegistration::where('user_id', $user->id)->first();
-        if ($existingRegistration) {
+        // [Security] Cek Semester
+        if ($user->semester < 7) {
             return redirect()->route('dashboard')
-                ->with('info', 'Anda sudah terdaftar. Silakan pantau status verifikasi Anda.');
+                ->with('error', 'Maaf, Pendaftaran Wisuda hanya terbuka untuk mahasiswa Semester 7 ke atas.');
         }
 
-        return view('graduation.create');
+        $registration = GraduationRegistration::where('user_id', $user->id)->first();
+        $period = GraduationPeriod::where('status', 'open')->latest()->first();
+
+        if(!$period && !$registration) {
+            return redirect()->route('dashboard')->with('error', 'Belum ada periode wisuda yang dibuka.');
+        }
+
+        return view('graduation.create', compact('registration', 'period'));
     }
 
-    /**
-     * Simpan Data Pendaftaran
-     */
-    public function store(StoreGraduationRequest $request)
+    public function store(Request $request)
     {
-        $validatedData = $request->validated();
-        $user = Auth::user();
+        if (Auth::user()->semester < 7) {
+            return redirect()->route('dashboard')->with('error', 'Anda belum memenuhi syarat semester.');
+        }
 
-        GraduationRegistration::create([
-            'user_id' => $user->id,
-            'parent_name'  => $validatedData['parent_name'],
-            'toga_size'    => $validatedData['toga_size'],
-            'ipk'          => $validatedData['ipk'],
-            'ips'          => $validatedData['ips'],
-            'thesis_title' => $validatedData['thesis_title'],
-            
-            // Data Dummy (Wajib ada biar gak error database)
-            'nik'     => $user->nik ?? '1234567890123456', 
-            'phone'   => $user->phone ?? '08123456789',
-            'address' => $user->address ?? 'Alamat Menyusul',
-            
-            'status' => 'pending',
+        $request->validate([
+            'graduation_period_id' => 'required|exists:graduation_periods,id',
+            'parent_name'          => 'required|string|max:255',
+            'toga_size'            => 'required|in:S,M,L,XL,XXL',
+            'thesis_title'         => 'required|string',
+            'ipk'                  => 'required|numeric|between:0,4.00',
+            'ips'                  => 'required|numeric|between:0,4.00',
         ]);
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Pendaftaran berhasil dikirim! Menunggu verifikasi admin.');
-    }
-
-    /**
-     * CETAK BIODATA
-     */
-    public function printBiodata()
-    {
-        $user = Auth::user();
-        $data = GraduationRegistration::where('user_id', $user->id)->first();
-
-        if (!$data) {
-            return redirect()->route('graduation.create')
-                ->with('error', 'Isi formulir pendaftaran dulu sebelum mencetak biodata.');
+        $period = GraduationPeriod::findOrFail($request->graduation_period_id);
+        
+        if ($period->registrations()->count() >= $period->quota) {
+            return back()->with('error', 'Mohon maaf, Kuota Wisuda sudah PENUH!');
         }
 
-        return view('graduation.print.biodata', compact('user', 'data'));
+        GraduationRegistration::create([
+            'user_id'              => Auth::id(),
+            'graduation_period_id' => $request->graduation_period_id,
+            'parent_name'          => $request->parent_name,
+            'toga_size'            => $request->toga_size,
+            'thesis_title'         => $request->thesis_title,
+            'ipk'                  => $request->ipk,
+            'ips'                  => $request->ips,
+            'status'               => 'pending',
+        ]);
+
+        return redirect()->route('graduation.create')->with('success', 'Pendaftaran berhasil! Menunggu verifikasi.');
     }
 
-    /**
-     * CETAK DRAFT IJAZAH
-     */
-    public function printDraft()
-    {
-        $user = Auth::user();
-        $data = GraduationRegistration::where('user_id', $user->id)->first();
+    /*
+    |--------------------------------------------------------------------------
+    | 2. FITUR PUBLIK (LIST & YEARBOOK)
+    |--------------------------------------------------------------------------
+    */
 
-        if (!$data) {
-            return redirect()->route('graduation.create')
-                ->with('error', 'Silakan daftar wisuda terlebih dahulu.');
-        }
-
-        return view('graduation.print.draft', compact('user', 'data'));
-    }
-
-    /**
-     * FITUR PANTAU: DAFTAR PESERTA (BARU)
-     */
     public function listPeserta(Request $request)
     {
-        // 1. Mulai Query (Hanya ambil user yang role-nya MAHASISWA)
-        $query = GraduationRegistration::with('user')
-            ->whereHas('user', function($q) {
-                $q->where('role', 'mahasiswa'); // <-- FILTER PENTING INI
-            });
+        $prodis = User::where('role', 'mahasiswa')->distinct()->pluck('major');
+        $query = GraduationRegistration::with(['user', 'period'])->where('status', 'verified');
 
-        // 2. Filter Prodi
-        if ($request->filled('prodi')) {
-            $query->whereHas('user', function ($q) use ($request) {
+        if ($request->has('prodi') && $request->prodi != '') {
+            $query->whereHas('user', function($q) use ($request) {
                 $q->where('major', $request->prodi);
             });
         }
 
-        // 3. Filter Angkatan
-        if ($request->filled('angkatan')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('cohort', 'like', '%' . $request->angkatan . '%');
-            });
-        }
-
-        // 4. Search Nama/NIM
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('nim', 'like', "%$search%");
-            });
-        }
-
-        // 5. Ambil Data
-        $participants = $query->latest()->paginate(10);
-
-        // 6. Data Prodi untuk Dropdown (KECUALIKAN ADMIN & YANG KOSONG)
-        $prodis = \App\Models\User::where('role', 'mahasiswa') // <-- Cuma ambil prodi punya mahasiswa
-                    ->whereNotNull('major')
-                    ->where('major', '!=', '')
-                    ->distinct()
-                    ->pluck('major');
-
+        $participants = $query->latest()->paginate(20);
         return view('graduation.list', compact('participants', 'prodis'));
     }
 
-
-    /**
-     * BUKU KENANGAN (HANYA UNTUK YANG SUDAH VERIFIED)
-     */
     public function yearbook()
     {
-        $user = Auth::user();
-        
-        // 1. Cek Status User Sendiri
-        $myReg = GraduationRegistration::where('user_id', $user->id)->first();
-
-        // Kalau belum daftar atau status bukan verified, tendang balik
-        if (!$myReg || $myReg->status != 'verified') {
-            return redirect()->route('dashboard')
-                ->with('error', 'Maaf, Buku Kenangan hanya dapat diakses oleh calon wisudawan yang sudah diverifikasi.');
-        }
-
-        // 2. Ambil Semua Data Wisudawan yang 'Verified'
-        $graduates = GraduationRegistration::with('user')
-                        ->where('status', 'verified')
-                        ->latest()
-                        ->paginate(9); // Tampilkan 9 orang per halaman
+        $graduates = GraduationRegistration::with(['user', 'period'])
+                                ->where('status', 'verified')
+                                ->inRandomOrder()
+                                ->paginate(12);
 
         return view('graduation.yearbook', compact('graduates'));
     }
-}
 
+    /*
+    |--------------------------------------------------------------------------
+    | 3. CETAK DOKUMEN (STRICT VERIFICATION)
+    |--------------------------------------------------------------------------
+    */
+
+    private function checkVerification()
+    {
+        $reg = Auth::user()->registration;
+        
+        if (!$reg || $reg->status !== 'verified') {
+            abort(403, 'AKSES DITOLAK. Dokumen ini hanya dapat dicetak setelah status pendaftaran diverifikasi.');
+        }
+        
+        return $reg;
+    }
+
+    public function printBiodata()
+    {
+        $registration = $this->checkVerification();
+        
+        // KEMBALI KE STANDAR: Kirim variable langsung, jangan dibungkus 'data'
+        $viewData = [
+            'user'         => Auth::user(),
+            'registration' => $registration,
+            'title'        => 'Biodata Wisudawan'
+        ];
+
+        $pdf = Pdf::loadView('graduation.print.biodata', $viewData);
+        // Set ukuran A4 agar rapi
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->stream('biodata-wisuda-' . Auth::user()->nim . '.pdf');
+    }
+
+    public function printDraft()
+    {
+        $registration = $this->checkVerification();
+
+        $viewData = [
+            'user'         => Auth::user(),
+            'registration' => $registration,
+            'title'        => 'Draft Ijazah'
+        ];
+
+        $pdf = Pdf::loadView('graduation.print.draft', $viewData);
+        $pdf->setPaper('a4', 'landscape'); // Wajib Landscape
+        
+        return $pdf->stream('draft-ijazah-' . Auth::user()->nim . '.pdf');
+    }
+
+    public function printInvitation()
+    {
+        $registration = $this->checkVerification();
+
+        $viewData = [
+            'user'         => Auth::user(),
+            'registration' => $registration,
+            'qr_code'      => 'QR-' . $registration->id . '-' . Auth::user()->nim,
+            'title'        => 'Undangan Wisuda'
+        ];
+
+        $pdf = Pdf::loadView('graduation.print.invitation', $viewData);
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream('undangan-wisuda-' . Auth::user()->nim . '.pdf');
+    }
+}

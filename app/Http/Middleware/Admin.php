@@ -15,21 +15,22 @@ class Admin
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
-    {
-        // 1. Cek dulu user sudah login atau belum
-        // Kalau belum login, lempar balik ke halaman login
-        if (!Auth::check()) {
-            return redirect('/login');
-        }
-
-        // 2. Cek apakah kolom 'faculty' isinya 'admin'
-        // Sesuai request kamu, pembedanya ada di kolom faculty
-        if (Auth::user()->faculty !== 'admin') {
-            // Kalau bukan admin (misal mahasiswa), kasih error 403 Forbidden
-            abort(403, 'Akses Ditolak. Halaman ini khusus Admin.');
-        }
-
-        // Kalau lolos dua pengecekan di atas, silakan lanjut
-        return $next($request);
+{
+    // 1. Cek apakah user sudah login?
+    if (!auth()->check()) {
+        return redirect()->route('login');
     }
+
+    // 2. Cek Role User (DEBUG)
+    // Kalau role bukan 'admin', kita tendang
+    if (auth()->user()->role !== 'admin') {
+        
+        // UNCOMMENT BARIS DI BAWAH INI KALAU MAU LIHAT DIA KBACANYA APA:
+        // dd('Role kamu terbaca sebagai: ' . auth()->user()->role);
+        
+        abort(403, 'AKSES DITOLAK. HALAMAN INI KHUSUS ADMIN.');
+    }
+
+    return $next($request);
+}
 }

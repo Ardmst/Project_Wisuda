@@ -28,7 +28,8 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="font-bold text-lg">Verifikasi Pending</p>
-                        <p class="text-sm mt-1">Saat ini ada <strong>{{ $pendingCount ?? 0 }}</strong> mahasiswa menunggu verifikasi.</p>
+                        <h3 class="text-3xl font-bold text-slate-800">{{ $pendingCount }}</h3>
+                        <p class="text-sm text-yellow-600">Mahasiswa menunggu verifikasi</p>
                     </div>
                     <i class="fa-solid fa-clock text-2xl opacity-50"></i>
                 </div>

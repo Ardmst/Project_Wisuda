@@ -2,11 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+
+// --- REGULAR CONTROLLERS ---
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GraduationController;
+
+// --- ADMIN CONTROLLERS ---
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\VerificationController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\GraduationPeriodController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,73 +25,69 @@ Route::get('/', function () {
 });
 
 // ==========================================
-// RUTE "PINTAR" (REDIRECT DASHBOARD)
+// 1. RUTE DASHBOARD "PINTAR" (REDIRECTOR)
 // ==========================================
 Route::get('/dashboard', function () {
-    // Cek role user: Admin lempar ke admin, Mahasiswa tetap di sini
-    if (Auth::user()->role == 'admin') {
+    // Jika Admin, lempar ke Dashboard Admin
+    if (Auth::user()->role === 'admin') {
         return redirect()->route('admin.dashboard');
     }
+    // Jika Mahasiswa, tampilkan Dashboard Mahasiswa
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
 // ==========================================
-// RUTE USER & MAHASISWA (AUTH)
+// 2. RUTE MAHASISWA & UMUM (AUTH)
 // ==========================================
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     
-    // --- Profil User ---
+    // --- Profile User ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // --- Menu Mahasiswa ---
+    // --- Grup Fitur Wisuda ---
+    // Prefix URL: /graduation/... | Prefix Name: graduation.
+    Route::prefix('graduation')->name('graduation.')->controller(GraduationController::class)->group(function () {
+        
+        // Pendaftaran
+        Route::get('/register', 'create')->name('create');
+        Route::post('/register', 'store')->name('store');
+
+        // Pantau (List Peserta & Buku Kenangan)
+        Route::get('/list', 'listPeserta')->name('list');
+        Route::get('/yearbook', 'yearbook')->name('yearbook');
+
+        // Cetak Dokumen (Sub-group)
+        // URL: /graduation/print/... | Name: graduation.print.
+        Route::prefix('print')->name('print.')->group(function () {
+            Route::get('/biodata', 'printBiodata')->name('biodata');
+            Route::get('/draft', 'printDraft')->name('draft');
+            Route::get('/invitation', 'printInvitation')->name('invitation');
+        });
+    });
+
+    // --- Buku Panduan ---
     Route::get('/manual-book', function () {
         return view('manual-book');
     })->name('manual.book');
-
-   // ... di dalam middleware 'auth' ...
-
-// ... di dalam middleware 'auth' ...
-// ... rute cetak yang lain ...
-
-// ... rute pantau ...
-    Route::get('/graduation/list', [GraduationController::class, 'listPeserta'])->name('graduation.list');
-
-// --- TAMBAHKAN INI ---
-    Route::get('/graduation/yearbook', [GraduationController::class, 'yearbook'])->name('graduation.yearbook');
-// ---------------------
-
-    // Rute Pendaftaran (Sudah ada)
-    Route::get('/graduation/register', [GraduationController::class, 'create'])->name('graduation.create');
-    Route::post('/graduation/register', [GraduationController::class, 'store'])->name('graduation.store');
-
-    // --- TAMBAHKAN INI (JANGAN SAMPAI LEWAT) ---
-    Route::get('/graduation/print/biodata', [GraduationController::class, 'printBiodata'])->name('graduation.print.biodata');
-    Route::get('/graduation/print/draft', [GraduationController::class, 'printDraft'])->name('graduation.print.draft');
-
-    // Rute Buku Panduan
-    Route::get('/manual-book', function () {
-    return view('manual-book');
-})->name('manual.book');
-    // --------------------------------------------
-    // ... rute cetak yang tadi ...
-
-
-// ...
 });
 
 
 // ==========================================
-// RUTE KHUSUS ADMIN (FULL ACCESS)
+// 3. RUTE KHUSUS ADMIN (FULL ACCESS)
 // ==========================================
+// Middleware 'admin' harus sudah didaftarkan di kernel/bootstrap
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
-    // 1. Dashboard Admin
-    Route::get('/dashboard', [VerificationController::class, 'dashboard'])->name('dashboard');
+    // Dashboard Admin
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // 2. Verifikasi Pendaftaran
+    // Manajemen Periode Wisuda (Resource Controller otomatis buat index, create, store, dll)
+    Route::resource('periods', GraduationPeriodController::class);
+
+    // Verifikasi Pendaftaran
     Route::controller(VerificationController::class)
         ->prefix('verification')
         ->name('verification.')
@@ -94,26 +96,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::patch('/update/{id}', 'updateStatus')->name('update'); 
             Route::delete('/delete/{id}', 'destroy')->name('destroy'); 
         });
-    
-    // 3. Kelola Pengumuman
+
+    // Kelola Pengumuman
     Route::controller(AnnouncementController::class)
         ->prefix('announcements')
         ->name('announcements.')
         ->group(function () {
-            Route::get('/', 'index')->name('index');    // Lihat Data
-            Route::post('/', 'store')->name('store');   // Simpan Baru
-            Route::delete('/{id}', 'destroy')->name('destroy'); // Hapus
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::delete('/{id}', 'destroy')->name('destroy');
         });
 
-    // 4. Laporan & Filter (SUDAH DIPERBAIKI)
+    // Laporan & Cetak
     Route::controller(ReportController::class)
         ->prefix('reports')
         ->name('reports.')
         ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/print', 'print')->name('print'); // <-- TAMBAHAN BARU
-    });
-
+            Route::get('/print', 'print')->name('print');
+        });
 }); 
 
 require __DIR__.'/auth.php';
