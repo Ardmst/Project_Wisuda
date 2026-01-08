@@ -1,4 +1,4 @@
-# Sistem Informasi Pendaftaran Wisuda Terintegrasi (SIP-Wisuda)
+# Sistem Informasi Pendaftaran Wisuda
 
 ## 1. Latar Belakang & Deskripsi Sistem
 Sistem Informasi Pendaftaran Wisuda (SIP-Wisuda) adalah perangkat lunak berbasis web yang dikembangkan untuk memodernisasi dan mendigitalisasi alur administrasi kelulusan di lingkungan universitas. Sistem ini bertujuan untuk meningkatkan efisiensi validasi data calon wisudawan serta menyediakan transparansi status pendaftaran antara mahasiswa dan biro akademik.
