@@ -1,61 +1,58 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Informasi Pendaftaran Wisuda Terintegrasi (SIP-Wisuda)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 1. Latar Belakang & Deskripsi Sistem
+Sistem Informasi Pendaftaran Wisuda (SIP-Wisuda) adalah perangkat lunak berbasis web yang dikembangkan untuk memodernisasi dan mendigitalisasi alur administrasi kelulusan di lingkungan universitas. Sistem ini bertujuan untuk meningkatkan efisiensi validasi data calon wisudawan serta menyediakan transparansi status pendaftaran antara mahasiswa dan biro akademik.
 
-## About Laravel
+Sistem dibangun menggunakan kerangka kerja **Laravel** dengan manajemen basis data **SQLite**, yang dioptimalkan untuk berjalan pada lingkungan pengembangan lokal **Laravel Herd**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 2. Arsitektur Teknologi
+Sistem ini dikembangkan dengan spesifikasi teknis sebagai berikut:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Framework:** Laravel (PHP)
+* **Database Management:** SQLite
+* **Database Viewer:** DB Browser for SQLite
+* **Local Server Environment:** Laravel Herd
+* **Architecture Pattern:** MVC (Model-View-Controller)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 3. Spesifikasi Fungsional & Logika Bisnis
+Sistem menerapkan **Otorisasi Bertingkat (Role-Based Access Control)** yang membedakan hak akses berdasarkan peran pengguna dan status akademik.
 
-## Learning Laravel
+### A. Antarmuka Publik (Landing Page)
+Halaman muka dirancang interaktif untuk memberikan informasi komprehensif kepada pengguna sebelum melakukan login:
+* **Sistem Panduan Pengguna (User Guidance):** Implementasi *Pop-up Modal* otomatis yang menjabarkan alur pendaftaran secara sekunsial.
+* **Repositori Dokumen:** Akses cepat (*Forwarding*) untuk mengunduh dokumen legalitas seperti Surat Keputusan (SK) dan Buku Pedoman Wisuda dalam format PDF.
+* **Integrasi Multimedia:** Fitur *embedded player* untuk penayangan video profil atau lagu himne "Terima Kasih UNS" sebagai bentuk apresiasi institusi.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### B. Modul Mahasiswa (Validasi Kurikulum)
+Sistem memiliki algoritma validasi otomatis untuk memfilter hak akses berdasarkan beban studi (Semester):
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1.  **Mahasiswa Belum Eligible (Semester < 7)**
+    * **Restriksi Akses:** Menu pendaftaran wisuda dinonaktifkan secara otomatis oleh sistem.
+    * **Akses Informasi:** Hak akses terbatas hanya untuk melihat basis data alumni (*Tracer Study*) dan daftar wisudawan terdahulu.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2.  **Mahasiswa Eligible (Semester ≥ 7)**
+    * **Pengajuan Wisuda:** Akses penuh untuk mengisi formulir pendaftaran dan unggah berkas persyaratan.
+    * **Pelacakan Status:** Mahasiswa dapat memantau status validasi berkas (Menunggu Verifikasi / Disetujui / Ditolak).
+    * **Pencetakan Dokumen Bersyarat:** Fitur cetak (Undangan Wisuda & Kartu Tanda Peserta) menggunakan logika *conditional rendering*; tombol cetak hanya akan aktif jika status pendaftaran telah berubah menjadi **"ACC"** (Disetujui) oleh Administrator.
 
-## Laravel Sponsors
+### C. Modul Administrator
+* **Verifikasi Data:** Fitur untuk memvalidasi kelengkapan berkas pendaftar dengan opsi persetujuan (ACC) atau penolakan.
+* **Manajemen Periode:** Pengaturan siklus wisuda aktif, kuota peserta, dan jadwal pelaksanaan.
+* **Sistem Notifikasi:** Mekanisme penyampaian informasi atau revisi berkas kepada dashboard mahasiswa.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 4. Konfigurasi Instalasi & Penggunaan
+Mengingat proyek ini menggunakan data persisten lokal (SQLite) dan Laravel Herd, berikut adalah prosedur operasionalnya:
 
-### Premium Partners
+### Persiapan Database
+1.  Pastikan file `database.sqlite` berada pada direktori `/database`.
+2.  Gunakan aplikasi **DB Browser for SQLite** untuk membuka, mengedit, atau memantau struktur tabel dan data *dummy* yang telah tersedia.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Menjalankan Aplikasi
+Proyek ini dikonfigurasi untuk berjalan di atas **Laravel Herd**. Oleh karena itu:
+1.  **Tidak diperlukan** perintah `php artisan serve`.
+2.  Pastikan *Service* Herd telah aktif.
+3.  Akses aplikasi secara langsung melalui peramban web (browser) menggunakan domain lokal yang terdeteksi oleh Herd (contoh: `http://nama-folder-project.test`).
 
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+**Catatan Pengembang:**
+Data *dummy* yang digunakan dalam sistem ini telah disesuaikan dengan konteks Bahasa Indonesia untuk keperluan simulasi pengujian fitur.
